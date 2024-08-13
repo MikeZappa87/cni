@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+package cni;
+
+option go_package = "pkg/grpc;cni";
+
+service CNI {
+    // MVP
+    rpc AddAttachment(AddAttachmentRequest) returns (AddAttachmentResponse) {}
+    // MVP
+    rpc DeleteAttachment(DeleteAttachmentRequest) returns (DeleteAttachmentResponse) {}
+    // MVP
+    rpc RegisterNetwork(NetworkRequest) returns (NetworkResponse) {}
+    rpc VerifyAttachment(VerifyAttachmentRequest) returns (VerifyAttachmentResponse) {}
+    rpc AtachmentStatus(AttachmentStatusRequest) returns (AttachmentStatusResponse) {}
+    rpc NetworkStatus(NetworkStatusRequest) returns (NetworkStatusResponse) {}
+    rpc QueryNetwork(QueryNetworkRequest) returns (QueryNetworkResponse) {}
+}
+
+message AddAttachmentRequest {
+    string name = 1; //required
+    LinuxAttachmentConfig LinuxConfig = 2;
+    WindowsAttachmentConfig WindowsConfig = 3;
+    map<string,string> labels = 4;
+    map<string,string> annotations = 5;
+    map<string,string> extradata = 100;
+}
+
+message AddAttachmentResponse {
+    map<string, IPConfig> ipconfigs = 1;
+    repeated Route routes = 2;
+    map<string,string> extradata = 100;
+}
+
+message DeleteAttachmentRequest {
+    string name = 1;
+    map<string,string> extradata = 100;
+}
+
+message DeleteAttachmentResponse {
+    map<string,string> extradata = 100;
+}
+
+message NetworkRequest {
+    string name = 1;
+    map<string,string> labels = 2;
+    map<string, string> attachment_selector = 3;
+    DNSConfig dns = 4;
+    repeated Route routes = 5;
+
+    //IPAM Information
+    map<string,string> extradata = 100;
+}
+
+message NetworkResponse {
+    string id = 1;
+}
+
+message VerifyAttachmentRequest {
+
+}
+
+message VerifyAttachmentResponse {
+
+}
+
+message AttachmentStatusRequest {
+
+}
+
+message AttachmentStatusResponse {
+
+}
+
+message NetworkStatusRequest {
+
+}
+
+message NetworkStatusResponse {
+
+}
+
+message QueryNetworkRequest {
+
+}
+
+message QueryNetworkResponse {
+
+}
+
+message LinuxAttachmentConfig {
+    string netns_path = 1;
+    map<string,string> extradata = 100;
+}
+
+message WindowsAttachmentConfig {
+    map<string,string> extradata = 100;
+}
+
+message Route {
+    string Dst = 1;
+    string Gateway = 2;
+    string Dev = 3;
+    int32 MTU = 4;
+    int32 Scope = 5;
+    map<string,string> extradata = 100;
+}
+
+   
+// DNSConfig specifies the DNS servers and search domains of a sandbox.
+message DNSConfig {
+    // List of DNS servers of the cluster.
+    repeated string servers = 1;
+    // List of DNS search domains of the cluster.
+    repeated string searches = 2;
+    // List of DNS options. See https://linux.die.net/man/5/resolv.conf
+    // for all available options.
+    repeated string options = 3;
+    map<string,string> extradata = 100;
+}
+
+message IPConfig {
+    repeated IP ip = 1;
+    string mac = 2;
+    map<string,string> extradata = 3;
+}
+
+message IP {
+    string ip_address = 1;
+    string cidr = 2;
+    string family = 3;
+}
+
+message IPAM {
+    
+}
