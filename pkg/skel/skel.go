@@ -42,6 +42,11 @@ type CmdArgs struct {
 	Path          string
 	NetnsOverride string
 	StdinData     []byte
+	// RuntimeSocket is the path to the container runtime's gRPC socket.
+	// Set when the CNI_RUNTIME_SOCKET environment variable is provided.
+	// Plugins that declare "runtimeSocket": true in their config can use
+	// this to make gRPC calls for privileged operations.
+	RuntimeSocket string
 }
 
 type dispatcher struct {
@@ -57,7 +62,7 @@ type dispatcher struct {
 type reqForCmdEntry map[string]bool
 
 func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
-	var cmd, contID, netns, ifName, args, path, netnsOverride string
+	var cmd, contID, netns, ifName, args, path, netnsOverride, runtimeSocket string
 
 	vars := []struct {
 		name       string
@@ -139,6 +144,17 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 			},
 			nil,
 		},
+		{
+			"CNI_RUNTIME_SOCKET",
+			&runtimeSocket,
+			reqForCmdEntry{
+				"ADD":   false,
+				"CHECK": false,
+				"DEL":   false,
+				"GC":    false,
+			},
+			nil,
+		},
 	}
 
 	argsMissing := make([]string, 0)
@@ -183,6 +199,7 @@ func (t *dispatcher) getCmdArgsFromEnv() (string, *CmdArgs, *types.Error) {
 		Path:          path,
 		StdinData:     stdinData,
 		NetnsOverride: netnsOverride,
+		RuntimeSocket: runtimeSocket,
 	}
 	return cmd, cmdArgs, nil
 }

@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/containernetworking/cni/pkg/capabilities"
 	"github.com/containernetworking/cni/pkg/types"
 )
 
@@ -39,6 +40,14 @@ func (e *RawExec) ExecPlugin(ctx context.Context, pluginPath string, stdinData [
 	c.Stdin = bytes.NewBuffer(stdinData)
 	c.Stdout = stdout
 	c.Stderr = stderr
+
+	// Parse capability requirements from the plugin config.
+	// If the plugin declares requiredCapabilities, we apply platform-specific
+	// capability restrictions before execution.
+	pluginCaps, _ := capabilities.ParseFromConfig(stdinData)
+	if pluginCaps != nil && !pluginCaps.NeedsFullRoot() {
+		applyCapabilityRestrictions(c, pluginCaps)
+	}
 
 	// Retry the command on "text file busy" errors
 	for i := 0; i <= 5; i++ {

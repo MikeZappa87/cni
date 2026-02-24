@@ -63,6 +63,12 @@ type RuntimeConf struct {
 	// to the plugin
 	CapabilityArgs map[string]interface{}
 
+	// RuntimeSocket is the absolute path to a Unix domain socket provided
+	// by the container runtime. Plugins that declare "runtimeSocket": true
+	// in their config will receive this via the CNI_RUNTIME_SOCKET env var
+	// so they can make gRPC calls for privileged operations.
+	RuntimeSocket string
+
 	// DEPRECATED. Will be removed in a future release.
 	CacheDir string
 }
@@ -503,6 +509,11 @@ func (c *CNIConfig) addNetwork(ctx context.Context, name, cniVersion string, net
 		return nil, err
 	}
 
+	// Validate runtime socket requirement
+	if net.Network.RuntimeSocket && rt.RuntimeSocket == "" {
+		return nil, fmt.Errorf("plugin %s requires a runtime socket (runtimeSocket: true) but no RuntimeSocket path was provided", net.Network.Type)
+	}
+
 	newConf, err := buildOneConfig(name, cniVersion, net, prevResult, rt)
 	if err != nil {
 		return nil, err
@@ -890,11 +901,12 @@ func (c *CNIConfig) getStatusNetwork(ctx context.Context, net *PluginConfig) err
 // =====
 func (c *CNIConfig) args(action string, rt *RuntimeConf) *invoke.Args {
 	return &invoke.Args{
-		Command:     action,
-		ContainerID: rt.ContainerID,
-		NetNS:       rt.NetNS,
-		PluginArgs:  rt.Args,
-		IfName:      rt.IfName,
-		Path:        strings.Join(c.Path, string(os.PathListSeparator)),
+		Command:       action,
+		ContainerID:   rt.ContainerID,
+		NetNS:         rt.NetNS,
+		PluginArgs:    rt.Args,
+		IfName:        rt.IfName,
+		Path:          strings.Join(c.Path, string(os.PathListSeparator)),
+		RuntimeSocket: rt.RuntimeSocket,
 	}
 }

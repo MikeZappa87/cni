@@ -48,6 +48,9 @@ type Args struct {
 	PluginArgsStr string
 	IfName        string
 	Path          string
+	// RuntimeSocket is the path to the runtime's gRPC socket for
+	// delegating privileged operations from unprivileged plugins.
+	RuntimeSocket string
 }
 
 // Args implements the CNIArgs interface
@@ -70,6 +73,9 @@ func (args *Args) AsEnv() []string {
 		"CNI_IFNAME="+args.IfName,
 		"CNI_PATH="+args.Path,
 	)
+	if args.RuntimeSocket != "" {
+		env = append(env, "CNI_RUNTIME_SOCKET="+args.RuntimeSocket)
+	}
 	return dedupEnv(env)
 }
 

@@ -198,4 +198,63 @@ var _ = Describe("Types", func() {
 			Expect(newResult.Version()).To(Equal("0.1.0"))
 		})
 	})
+
+	Describe("PluginConf with RequiredCapabilities and RuntimeSocket", func() {
+		It("can unmarshal requiredCapabilities from JSON", func() {
+			conf := types.PluginConf{}
+			err := json.Unmarshal([]byte(`{
+				"type": "bridge",
+				"requiredCapabilities": ["NET_ADMIN", "NET_RAW"]
+			}`), &conf)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conf.RequiredCapabilities).To(Equal([]string{"NET_ADMIN", "NET_RAW"}))
+			Expect(conf.RuntimeSocket).To(BeFalse())
+		})
+
+		It("can unmarshal runtimeSocket from JSON", func() {
+			conf := types.PluginConf{}
+			err := json.Unmarshal([]byte(`{
+				"type": "bridge",
+				"requiredCapabilities": [],
+				"runtimeSocket": true
+			}`), &conf)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conf.RequiredCapabilities).To(BeEmpty())
+			Expect(conf.RuntimeSocket).To(BeTrue())
+		})
+
+		It("omits requiredCapabilities and runtimeSocket when empty/false", func() {
+			conf := types.PluginConf{
+				Type: "bridge",
+			}
+			data, err := json.Marshal(&conf)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(data)).NotTo(ContainSubstring("requiredCapabilities"))
+			Expect(string(data)).NotTo(ContainSubstring("runtimeSocket"))
+		})
+
+		It("marshals requiredCapabilities and runtimeSocket when set", func() {
+			conf := types.PluginConf{
+				Type:                 "bridge",
+				RequiredCapabilities: []string{"NET_ADMIN"},
+				RuntimeSocket:        true,
+			}
+			data, err := json.Marshal(&conf)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(data)).To(ContainSubstring(`"requiredCapabilities":["NET_ADMIN"]`))
+			Expect(string(data)).To(ContainSubstring(`"runtimeSocket":true`))
+		})
+
+		It("is backwards compatible with existing configs", func() {
+			conf := types.PluginConf{}
+			err := json.Unmarshal([]byte(`{
+				"type": "bridge",
+				"capabilities": {"portMappings": true}
+			}`), &conf)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(conf.RequiredCapabilities).To(BeNil())
+			Expect(conf.RuntimeSocket).To(BeFalse())
+			Expect(conf.Capabilities).To(HaveKeyWithValue("portMappings", true))
+		})
+	})
 })

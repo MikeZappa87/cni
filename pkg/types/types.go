@@ -70,6 +70,18 @@ type PluginConf struct {
 	IPAM         IPAM            `json:"ipam,omitempty"`
 	DNS          DNS             `json:"dns,omitempty"`
 
+	// RequiredCapabilities declares the Linux capabilities (without the CAP_ prefix)
+	// that this plugin needs to operate. When specified, the runtime SHOULD drop all
+	// capabilities not in this list before executing the plugin. If nil/empty, the
+	// plugin is assumed to require full root privileges (backwards-compatible).
+	// Example: ["NET_ADMIN", "NET_RAW"]
+	RequiredCapabilities []string `json:"requiredCapabilities,omitempty"`
+
+	// RuntimeSocket indicates that the plugin requires a gRPC socket connection
+	// back to the container runtime for delegating privileged operations.
+	// When true, the runtime MUST set the CNI_RUNTIME_SOCKET environment variable.
+	RuntimeSocket bool `json:"runtimeSocket,omitempty"`
+
 	RawPrevResult map[string]interface{} `json:"prevResult,omitempty"`
 	PrevResult    Result                 `json:"-"`
 
